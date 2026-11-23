@@ -23,7 +23,7 @@ const TONES = {
 };
 
 export default function RiskMatrixPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refresh } = useAuth();
   const toast = useToast();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -67,7 +67,7 @@ export default function RiskMatrixPage() {
     setSavingProfile(true);
     try {
       await api.put('/auth/profile', profile);
-      await refreshUser();
+      await refresh();
       toast.success('Profile updated.');
     } catch (err) {
       toast.error(err.message);

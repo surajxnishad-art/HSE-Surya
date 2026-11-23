@@ -616,7 +616,7 @@ function ReferenceTab({ kind }) {
 
 function SettingsTab() {
   const toast = useToast();
-  const { refreshMeta } = useAuth();
+  const { loadMeta } = useAuth();
   const [values, setValues] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -638,7 +638,7 @@ function SettingsTab() {
     try {
       await api.put('/admin/settings', { settings: values });
       toast.success('System settings saved.');
-      if (refreshMeta) await refreshMeta();
+      if (loadMeta) await loadMeta();
     } catch (err) {
       toast.error(err.message);
     } finally {
