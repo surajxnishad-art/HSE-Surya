@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { get, query, run } from '../db.js';
-import { audit, requireAuth } from '../auth.js';
+import { audit, isReadOnly, requireAuth } from '../auth.js';
 import { asyncHandler, badRequest, clampInt, cleanText, forbidden, newId, notFound, nowIso } from '../util.js';
 
 export const documentsRouter = Router();
@@ -68,7 +68,7 @@ function decodeFile(input) {
 }
 
 function requireWriter(req) {
-  if (req.user.permissions.readOnly) throw forbidden('Your role has read-only access.');
+  if (isReadOnly(req.user.role)) throw forbidden('Your role has read-only access.');
 }
 
 documentsRouter.get(
@@ -266,7 +266,7 @@ documentsRouter.delete(
     if (!doc) throw notFound('Document not found.');
     const canDelete =
       ['super_admin', 'admin', 'hse_manager'].includes(req.user.role) || doc.uploaded_by === req.user.username;
-    if (!canDelete || req.user.permissions.readOnly) throw forbidden('You cannot delete this document.');
+    if (!canDelete || isReadOnly(req.user.role)) throw forbidden('You cannot delete this document.');
     await run('DELETE FROM document_revisions WHERE document_id = ?', [doc.id]);
     await run('DELETE FROM documents WHERE id = ?', [doc.id]);
     await audit(req, 'delete', 'document', doc.id, { title: doc.title });

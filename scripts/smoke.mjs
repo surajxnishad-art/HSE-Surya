@@ -330,7 +330,7 @@ async function main() {
     const hazardsDef = modules.find((m) => m.name === 'hazards');
     const hazardPayload = buildPayload(hazardsDef, 2, {
       title: 'Smoke test unguarded rotating shaft',
-      category: 'machine',
+      category: 'physical',
       status: 'open',
       department: 'Production',
     });
@@ -370,7 +370,7 @@ async function main() {
       `HTTP ${xlsx.status}`,
     );
 
-    const reportJson = await officerClient.get('/api/reports/incident?format=json');
+    const reportJson = await officerClient.get('/api/reports/incident_investigation?format=json');
     check(
       'Report data returns structured sections',
       reportJson.status === 200 && Boolean(reportJson.json),

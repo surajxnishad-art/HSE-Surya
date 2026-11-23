@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { get, query, run } from '../db.js';
-import { audit, requireAuth, requirePermission } from '../auth.js';
+import { audit, isReadOnly, requireAuth, requirePermission } from '../auth.js';
 import { asyncHandler, badRequest, cleanText, forbidden, newId, notFound, nowIso } from '../util.js';
 
 export const workflowRouter = Router();
 
 function requireWriter(req) {
-  if (req.user.permissions.readOnly) throw forbidden('Your role has read-only access.');
+  if (isReadOnly(req.user.role)) throw forbidden('Your role has read-only access.');
 }
 
 /* ------------------------------------------------------------ permits */
