@@ -8,6 +8,7 @@ import { SCHEMA_SQL } from './schema.js';
 import { attachUser, bootstrapSuperAdmin } from './auth.js';
 import { seedReferenceData, MODULES, MODULE_MAP } from './modules.js';
 import { createResourceRouter } from './resource.js';
+import { ensureSchemaColumns } from './migrate.js';
 import { HttpError } from './util.js';
 import { authRouter } from './routes/auth.js';
 import { adminRouter } from './routes/admin.js';
@@ -108,6 +109,7 @@ const PORT = Number(process.env.PORT || 3000);
 async function start() {
   await initDb();
   await exec(SCHEMA_SQL);
+  await ensureSchemaColumns(MODULES);
   await seedReferenceData();
   await bootstrapSuperAdmin();
   app.listen(PORT, '0.0.0.0', () => {
