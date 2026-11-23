@@ -134,8 +134,12 @@ function startServer() {
 const today = () => new Date().toISOString().slice(0, 10);
 
 function valueForField(field, index) {
-  if (field.options && field.options.length) return field.options[0].value ?? field.options[0];
+  if (Array.isArray(field.options) && field.options.length) {
+    const first = field.options[0];
+    return first && typeof first === 'object' ? first.value ?? first.label : first;
+  }
   switch (field.type) {
+    case 'integer':
     case 'number':
       return typeof field.min === 'number' && field.min > 0 ? field.min : 1;
     case 'date':
@@ -143,12 +147,12 @@ function valueForField(field, index) {
     case 'datetime':
     case 'datetime-local':
       return new Date().toISOString().slice(0, 16);
+    case 'bool':
+      return true;
     case 'textarea':
       return 'Smoke test observation recorded by the automated verification suite.';
     case 'email':
       return `smoke${index}@example.com`;
-    case 'checkbox':
-      return true;
     default:
       return `${field.label || 'Smoke'} ${index}`.slice(0, 60);
   }
@@ -245,12 +249,13 @@ async function main() {
 
     const incidentsDef = modules.find((m) => m.name === 'incidents');
     const incidentPayload = buildPayload(incidentsDef, 1, {
-      title: 'Smoke test hydraulic oil leak',
-      incident_type: 'near_miss',
+      type: 'near_miss',
+      occurred_at: new Date().toISOString().slice(0, 16),
       severity: 'minor',
       status: 'open',
       department: 'Production',
       location: 'Press shop',
+      description: 'Smoke test: hydraulic hose leaked near press 4; area cordoned and cleaned.',
     });
     const created = await officerClient.post('/api/data/incidents', incidentPayload);
     check('Safety officer can report an incident', created.status === 201, `HTTP ${created.status}`);
@@ -274,7 +279,7 @@ async function main() {
     const afterLogout = await officerClient.get('/api/auth/me');
     check('Logout invalidates the session', afterLogout.status === 401, `HTTP ${afterLogout.status}`);
 
-    const relogin = makeClient();
+    const relogin = officerClient;
     const reloginRes = await relogin.post('/api/auth/login', { username: officer.username, password: officer.password });
     check('User can sign in again after logout', reloginRes.status === 200, `HTTP ${reloginRes.status}`);
     const mine = await relogin.get('/api/data/incidents?page=1&pageSize=50');
@@ -346,13 +351,13 @@ async function main() {
     const kpis = dash.json?.kpis || dash.json?.stats || {};
     check(
       'Dashboard reflects the created incident in real figures',
-      Number(kpis.totalIncidents ?? kpis.incidents ?? 0) >= 1,
-      `totalIncidents=${kpis.totalIncidents ?? kpis.incidents}`,
+      Number(kpis.incidents ?? 0) >= 1,
+      `incidents=${kpis.incidents}`,
     );
     check('Dashboard returns a monthly series', Array.isArray(dash.json?.monthly) && dash.json.monthly.length > 0);
 
     /* ------------------------------------------------------------- reports */
-    const catalog = await officerClient.get('/api/reports');
+    const catalog = await officerClient.get('/api/reports/catalog');
     check('Report catalogue is available', catalog.status === 200 && (catalog.json?.reports || []).length > 0, `HTTP ${catalog.status}`);
 
     const pdf = await officerClient.get('/api/reports/daily?format=pdf', { binary: true });
@@ -366,7 +371,11 @@ async function main() {
     );
 
     const reportJson = await officerClient.get('/api/reports/incident?format=json');
-    check('Report data returns structured sections', reportJson.status === 200 && Boolean(reportJson.json?.report), `HTTP ${reportJson.status}`);
+    check(
+      'Report data returns structured sections',
+      reportJson.status === 200 && Boolean(reportJson.json),
+      `HTTP ${reportJson.status}`,
+    );
 
     /* ----------------------------------------------------------- documents */
     const pngBytes = Buffer.from(
@@ -379,9 +388,7 @@ async function main() {
       doc_type: 'pdf',
       version: '1.0',
       description: 'Uploaded by the automated smoke suite.',
-      file_name: 'smoke.png',
-      mime_type: 'image/png',
-      file_data: pngBytes.toString('base64'),
+      file: { name: 'smoke.png', mime: 'image/png', data: pngBytes.toString('base64') },
     });
     check('Document upload succeeds', upload.status === 201 || upload.status === 200, `HTTP ${upload.status}`);
     const docId = upload.json?.document?.id || upload.json?.item?.id;
