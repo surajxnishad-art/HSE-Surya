@@ -273,7 +273,7 @@ dashboardRouter.get(
 
     res.json({
       generatedAt: new Date().toISOString(),
-      scope: req.user.permissions.viewAll ? 'company' : 'department',
+      scope: req.permissions?.viewAll ? 'company' : 'department',
       kpis: {
         employees,
         incidents: incidentTotal,
