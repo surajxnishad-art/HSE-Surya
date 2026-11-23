@@ -1,0 +1,32 @@
+{
+  "name": "industrial-hse-pro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "INDUSTRIAL HSE PRO - Enterprise Safety Management System",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "cookie-parser": "^1.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.1",
+    "pdfkit": "^0.15.1",
+    "pg": "^8.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "recharts": "^2.13.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}
