@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 import { get, query } from '../db.js';
 import { ENUMS } from '../modules.js';
-import { audit, requireAuth } from '../auth.js';
+import { audit, canViewAll, requireAuth } from '../auth.js';
 import { asyncHandler, badRequest, cleanText } from '../util.js';
 
 export const reportsRouter = Router();
@@ -490,7 +490,7 @@ const REPORT_DEFS = {
         `SELECT * FROM employees ${department && department !== 'all' ? 'WHERE department = ?' : ''} ORDER BY full_name LIMIT 500`,
         department && department !== 'all' ? [department] : [],
       );
-      const columns = user.permissions.viewAll
+      const columns = canViewAll(user.role)
         ? EMPLOYEE_COLS
         : EMPLOYEE_COLS.filter((c) => !['medical_fitness', 'fitness_expiry'].includes(c.key));
       return {

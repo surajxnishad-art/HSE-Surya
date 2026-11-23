@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { get, query, run } from '../db.js';
-import { requireAuth } from '../auth.js';
+import { canViewAll, permissionsFor, requireAuth } from '../auth.js';
 import { asyncHandler, newId, nowIso } from '../util.js';
 
 export const notificationsRouter = Router();
@@ -13,7 +13,7 @@ const plusDays = (days) => new Date(Date.now() + days * 86400000).toISOString().
  * state of the HSE records rather than a stale queue.
  */
 async function derivedAlerts(user) {
-  const scoped = !user.permissions?.viewAll;
+  const scoped = !canViewAll(user.role);
   const clause = scoped ? ' AND department = ?' : '';
   const params = scoped ? [user.department || '__unassigned__'] : [];
   const alerts = [];
@@ -106,7 +106,7 @@ async function derivedAlerts(user) {
     });
   }
 
-  if (user.permissions?.manageUsers) {
+  if (permissionsFor(user.role).manageUsers) {
     const pending = await get("SELECT COUNT(*) AS total FROM users WHERE status = 'pending'");
     if (Number(pending?.total || 0) > 0) {
       alerts.push({
