@@ -284,7 +284,7 @@ export function createResourceRouter(def) {
       if (fields.some((f) => f.name === 'created_by')) record.created_by = req.user.id;
       if (beforeWrite) await beforeWrite({ record, req, mode: 'create' });
 
-      const columns = Object.keys(record).filter((key) => fieldMap.has(key));
+      const columns = Object.keys(record).filter((key) => fieldMap.has(key) || key === numberField);
       const sql = `INSERT INTO ${table} (id, ${columns.join(', ')}, created_at, updated_at)
         VALUES (?, ${columns.map(() => '?').join(', ')}, ?, ?)`;
       await run(sql, [id, ...columns.map((c) => record[c]), now, now]);

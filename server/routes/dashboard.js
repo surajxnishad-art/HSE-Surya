@@ -23,6 +23,13 @@ dashboardRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const s = scope(req.user);
+    // ppe_issues has no department column, so scope it through the employee record.
+    const ppeScope = req.user.permissions?.viewAll
+      ? { clause: '', params: [] }
+      : {
+          clause: ' AND employee_id IN (SELECT id FROM employees WHERE department = ?)',
+          params: [req.user.department || '__unassigned__'],
+        };
     const months = recentMonths(12);
 
     const [
@@ -67,8 +74,8 @@ dashboardRouter.get(
       query(`SELECT status, COUNT(*) AS total FROM trainings WHERE 1=1${s.clause} GROUP BY status`, s.params),
       query(`SELECT status, COUNT(*) AS total FROM permits WHERE 1=1${s.clause} GROUP BY status`, s.params),
       scalar(
-        `SELECT COUNT(DISTINCT employee_id) AS total FROM ppe_issues WHERE status = 'issued' AND employee_id IS NOT NULL${s.clause}`,
-        s.params,
+        `SELECT COUNT(DISTINCT employee_id) AS total FROM ppe_issues WHERE status = 'issued' AND employee_id IS NOT NULL${ppeScope.clause}`,
+        ppeScope.params,
       ),
       get(
         `SELECT MAX(occurred_at) AS last FROM incidents WHERE type = 'lti'${s.clause}`,
