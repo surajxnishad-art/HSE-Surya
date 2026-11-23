@@ -7,9 +7,9 @@ export const dashboardRouter = Router();
 
 const RECORDABLE_TYPES = ['medical_treatment', 'lti'];
 
-function scope(user) {
-  if (user.permissions?.viewAll) return { clause: '', params: [] };
-  return { clause: ' AND department = ?', params: [user.department || '__unassigned__'] };
+function scope(req) {
+  if (req.permissions?.viewAll) return { clause: '', params: [] };
+  return { clause: ' AND department = ?', params: [req.user.department || '__unassigned__'] };
 }
 
 async function scalar(sql, params = []) {
@@ -22,9 +22,9 @@ dashboardRouter.get(
   '/',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const s = scope(req.user);
+    const s = scope(req);
     // ppe_issues has no department column, so scope it through the employee record.
-    const ppeScope = req.user.permissions?.viewAll
+    const ppeScope = req.permissions?.viewAll
       ? { clause: '', params: [] }
       : {
           clause: ' AND employee_id IN (SELECT id FROM employees WHERE department = ?)',
@@ -198,9 +198,9 @@ dashboardRouter.get(
     /* ---- recent activity (real records) ---- */
     const recent = await query(
       `SELECT id, action, entity, entity_id, username, created_at FROM audit_logs
-       ${req.user.permissions.viewAll ? '' : 'WHERE user_id = ?'}
+       ${req.permissions?.viewAll ? '' : 'WHERE user_id = ?'}
        ORDER BY created_at DESC LIMIT 8`,
-      req.user.permissions.viewAll ? [] : [req.user.id],
+      req.permissions?.viewAll ? [] : [req.user.id],
     );
 
     const recentIncidents = await query(
